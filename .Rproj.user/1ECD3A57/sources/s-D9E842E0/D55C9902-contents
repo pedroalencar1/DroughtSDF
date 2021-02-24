@@ -1,0 +1,19 @@
+\name{get_spi}
+\alias{get_spi}
+\title{Calculate SPI on selected time window}
+\usage{
+get_spi(df, k = 3)
+}
+
+\description{
+*Function to calculate SPI on selected time window.
+}
+
+\arguments{
+\item{df}{a dataframe with two columns. The first with time stamps (\code{date} or \code{POSIX} type), the second with precipitation for the timestamp (daily, hourly, monthly, etc.)}
+\item{k}{indicates the acumulation time for SPI calculation. Common values are 1,3,6,12. For more info on the meaning of this value see Mishra and Singh, 2010 (A review of drought concepts)}
+}
+
+\examples{
+spi <- get_spi(df, k = 3)
+}

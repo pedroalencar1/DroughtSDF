@@ -1,0 +1,99 @@
+library(readxl)
+library(reshape2)
+library(data.table)
+library(dplyr)
+library(ggplot2)
+library(ggforce)
+
+setwd('C:/Users/pedro/OneDrive/@DOUTORADO/@@TU-Berlin/@Artigos/CAP 3/stations/Gilbués')
+
+sheets <- excel_sheets('Gilbues.xlsx')
+
+data <- list()
+stations <- c(NA)
+
+for (i in 1:length(sheets)){
+  #open and select relevant columns
+  data_aux <- read_excel('Gilbues.xlsx', sheet = sheets[i], skip = 12, col_names = T)
+  data_aux <- data_aux[,c(1,3,14:44)]
+  colnames(data_aux) <- c('station', 'date',1:31)
+
+  stations[i] <- data_aux$station[1] #get station number
+
+  #set data into a df with two columns
+  melt_data <- melt(data_aux,id.vars = c('station', 'date'), variable.name = 'day')
+  melt_data$time <- as.Date(paste(year(melt_data$date),month(melt_data$date),
+                                  melt_data$day, sep = '-'))
+
+  melt_data <- melt_data[,c(5,4)]
+  melt_data <- melt_data[order(melt_data$time),]
+
+  data[[i]] <- melt_data
+}
+
+all_stations <- data.frame(time = seq(as.Date('1946-01-01'),as.Date('2019-12-31'),by =1))
+# aux <- matrix(NA, ncol = length(stations), nrow = nrow(all_stations))
+
+
+#get other stations (already linear)
+station_82970 <- read.csv('Gilbues/ALTO PARNAIBA dados_82970_D_1976-08-20_2021-01-01.csv',
+                          sep = ';', skip = 10)
+colnames(station_82970) <- c('time', '82970')
+station_82970$time <- as.Date(station_82970$time, tryFormats = c("%d.%m.%Y"))
+data[[length(sheets)+1]] <- station_82970
+
+station_82678 <- read.csv('Gilbues/FLORIANO Piaui dados_82678_D_1968-01-20_2021-01-01.csv',
+                          sep = ';', skip = 10)
+colnames(station_82678) <- c('time', '82678')
+station_82678$time <- as.Date(station_82678$time, tryFormats = c("%d.%m.%Y"))
+data[[length(sheets)+2]] <- station_82678
+
+length(data)
+
+for (i in 1:length(data)){
+  all_stations <- left_join(all_stations,data[[i]], by ='time')
+}
+
+colnames(all_stations) <- c('time', stations, '82970', '82678')
+
+
+#get coordinates
+coord <- read.delim('coordinates.txt', sep = '\t')
+coord$order <- 2:(nrow(coord)+1)
+coord <- coord[order(coord$dist),]
+
+#reorder dataset by distance
+all_stations <- all_stations[,c(1,coord$order)]
+all_stations_aux <- all_stations[,2:ncol(all_stations)]
+View(all_stations_aux)
+
+
+prec_gilbues <- data.frame(time = all_stations$time, precipitation = NA)
+for (i in 1:nrow(prec_gilbues)){
+  v_row <- all_stations_aux[i,]
+  n <- min(which(is.na(v_row)==F))
+  if (n == Inf){
+    n <- 1
+  }
+  prec_gilbues$precipitation[i] <- all_stations_aux[i,n]
+}
+
+
+write.csv(prec_gilbues, 'rain_gilbués.csv')
+
+
+ggplot(prec_gilbues, aes(x = time, y = precipitation))+
+  geom_line()+
+  facet_zoom(x = time>as.Date('2000-01-01')&time<as.Date('2005-12-31'))+
+  ggtitle('Precipitation Series - Gilbués')+
+  theme_bw() + labs(x = 'Date', y = 'precipitation (mm)')+
+  theme(strip.background = element_rect(fill = 'white', linetype = 2))
+
+
+
+
+
+
+
+
+

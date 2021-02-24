@@ -1,0 +1,24 @@
+\name{get_parameters}
+\alias{get_parameters}
+\title{Assess the parameters for five different distrubutions using the Principle of Maximum Entropy. More in details}
+\usage{
+get_parameters(df)
+}
+
+\description{
+*Assess probability distribution parameters
+}
+
+\arguments{
+\item{df}{a single column dataframe or a vector with the value of the evetns feature (duration or severity)}
+}
+
+\details{
+5 distributions are tested (Exponential, Log-Normal, Gamma, Weibul, Log-Logistic and Gumbel). They were selected based on the literature, being frequently associated to precipitation, droughts and extreme events.
+
+The estimation of parameters follows the Principle of Maximum Entropy (Singh, 1998 - Entropy-based parameter estimation in hydrology)
+}
+
+\examples{
+param <- get_spi(df, k = 3) \%>\% get_data() \%>\% get_parameters()
+}

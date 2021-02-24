@@ -1,0 +1,2 @@
+exportPattern("^[[:alpha:]]+")
+import(ggplot2, dplyr, lubridate, actuar, stats, magrittr, tibble, tibbletime, import, SPEI, grid, data.table)

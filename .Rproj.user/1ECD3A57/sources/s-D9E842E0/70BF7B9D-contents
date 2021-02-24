@@ -1,0 +1,15 @@
+get_spi <- function(df, k = 3){
+  import::from(magrittr, "%>%")
+
+  df_month <- tibble::tibble(time = as.POSIXct(df[,1]),
+                             value = df[,2]) %>%  tibbletime::as_tbl_time(time)
+  df_month <- tibbletime::collapse_by(df_month, period = 'month')
+  df_month <- df_month %>% dplyr::group_by(time) %>%
+    dplyr::summarise(value = sum(.data[["value"]]))
+
+  spi <- SPEI::spi(df_month[,2], k, na.rm = T)
+
+  series_spi <- data.frame(time = df_month[,1], spi = spi$fitted)
+  colnames(series_spi) <- c('time', 'spi')
+  return(series_spi)
+}

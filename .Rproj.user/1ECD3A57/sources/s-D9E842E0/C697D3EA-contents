@@ -1,0 +1,75 @@
+get_parameters <- function(df){
+
+  #parameters obtained with the Principle of Maximum Entropy
+  #For more info see Singh 1998 (Entropy-based parameter estimation in hydrology)
+
+  df <- data.frame(data = sort(df))
+  df$ln <- log(df$data)
+
+  mean_data <- mean(df$data)
+  mean_ln <- mean(df$ln)
+
+
+  param <- list(NA)
+  #exponential
+  param[['exponential']]['a'] <- 1/mean_data
+
+  #lognormal
+  param[['lognormal']]['a'] <- mean_ln
+  param[['lognormal']]['b'] <- sqrt(mean(df$ln^2) - mean_ln^2)
+
+  #gamma
+  f_gamma <- function(b) {
+    abs(digamma(b) - log(b) + 0.59)
+  }
+  aux_gamma <- stats::optimize(f = f_gamma, interval = c(1e-8,1e8))$minimum
+
+  param[['gamma']]['a'] <- mean_data/aux_gamma
+  param[['gamma']]['b'] <- aux_gamma
+
+  #Weibul
+  aux_weibul_b <- exp(digamma(1) - mean_ln)
+
+  f_weibul <- function(a){
+    aux <- mean(log(df$data^a))
+    abs(aux^(1/a) - aux_weibul_b)
+  }
+  aux_weibul_a <- stats::optimize(f = f_weibul, interval = c(1e-6,4))$minimum
+
+  param[['weibul']]['a'] <- aux_weibul_a
+  param[['weibul']]['b'] <- aux_weibul_b
+
+  #log-logistic
+  f_loglogist1 <- function(a){
+    abs(mean(log(df$data/a)))
+  }
+
+  aux_loglogist_a <- stats::optimize(f = f_loglogist1, interval = c(1e-8,1e8))$minimum
+
+  f_loglogist2 <- function(b){
+    aux <- mean(log(1+ (df$data/aux_loglogist_a)^b))
+    abs(aux - 1)
+  }
+
+  aux_loglogist_b <- stats::optimize(f = f_loglogist2, interval = c(1e-8,1e2))$minimum
+
+
+  param[['loglogist']]['a'] <- aux_loglogist_a
+  param[['loglogist']]['b'] <- aux_loglogist_b
+
+  #Gumbel
+
+  f_gumbel <- function(x){
+    aux1 <- mean(x[1]*(df$data - x[2])) + digamma(1)
+    aux2 <- mean(exp(mean(x[1]*(df$data - x[2])) + digamma(1))) - 1
+    return(c(aux1,aux2))
+  }
+
+  p_gumbel <- nleqslv::nleqslv(c(1,5), gumbel1)$x
+  param[['gumbel']]['a'] <- p_gumbel[1]
+  param[['gumbel']]['b'] <- p_gumbel[2]
+
+
+  param <- param[-1]
+  return(param)
+}

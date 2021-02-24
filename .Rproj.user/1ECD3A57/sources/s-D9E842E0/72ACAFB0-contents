@@ -1,0 +1,11 @@
+Package: DroughtSDF
+Type: Package
+Title: Severity-Duration-Frequency of Droughts
+Version: 0.1.0
+Author: Pedro Alencar
+Maintainer: Pedro Alencar <pedrohlalencar@gmail.com>
+Description: This package calculates the marginals for severity and duration of droughts to be used on obtaining SDF curves
+License: MIT
+Imports: ggplot2, dplyr, lubridate, actuar, EnvStats, stats, magrittr, tibble, tibbletime, import, SPEI, grid, data.table
+Encoding: UTF-8
+LazyData: true

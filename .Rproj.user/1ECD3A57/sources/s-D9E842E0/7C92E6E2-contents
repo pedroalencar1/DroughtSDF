@@ -1,0 +1,73 @@
+wd <- 'C:/Users/pedro/OneDrive/@DOUTORADO/@@TU-Berlin/@Artigos/CAP 5/R'
+setwd(wd)
+
+pacman::p_load('ncdf4','ncdf4.helpers','PCICt','ggplot2','tidyr','dplyr','readr'
+               ,'raster','tibbletime','lubridate','RColorBrewer','stringr','knitr'
+               ,'tinytex','data.table','runner', 'reshape2', 'tidyquant', 'SPEI'
+               , 'ts', 'expss')
+
+##for data from brasil
+station_data <- read.delim('739038.txt')
+colnames(station_data) <- c('station','year','month',1:31)
+head(station_data,5)
+
+vertical_data <- gather(station_data, key = day, value = precip, 4:34)
+
+vertical_data$date <- as.Date(paste(as.character(vertical_data$year),
+                                    as.character(vertical_data$month),
+                                    as.character(vertical_data$day),sep = '-'))
+head(vertical_data,5)
+
+consol_data <- data.frame(date = seq.Date(as.Date('1911-1-1'),as.Date('2020-12-31'),by = 'day'))
+head(consol_data,5)
+
+consol_data$precip <- vlookup(consol_data$date, vertical_data, result_column = 5,
+                              lookup_column = 6)
+
+head(consol_data,5)
+class(consol_data)
+
+ceara <- consol_data
+
+# plot(consol_data)
+###########################
+
+
+## for data from germany
+data <- read.delim('potsdam2.txt', sep = '\t')
+consol_data <- data.frame(date = ymd(data$date), value = as.numeric(data$precip))
+head(data,5)
+class(consol_data$date)
+#######################
+
+tibble_precip <- tibble::tibble(time = as.POSIXct(consol_data[,1]),
+                           value = consol_data[,2]) %>%  as_tbl_time(time)
+month_precip <- collapse_by(tibble_precip, period = 'month')
+month_precip <- month_precip %>% group_by(time) %>%
+  summarise(value = sum(.data[["value"]]))
+
+## there are 6 monnths with NA, all in the second semester, therefore will be
+## considered 0
+month_precip <- tibble_precip
+
+sum(is.na(month_precip))
+month_precip$value[is.na(month_precip$value)] <- 0
+# View(month_precip)
+
+spi.3 <- spi(month_precip$value, 3)
+month_precip$spi <- spi.3$fitted
+colnames(month_precip) <-  c('date','precip','spi')
+head(month_precip)
+
+month_precip$is.drought <- (month_precip$spi <= -1)*1
+month_precip$count<- 1:nrow(month_precip)
+# plot(month_precip$date,month_precip$is.drought)
+
+droughts <- month_precip
+droughts <- droughts %>% filter(is.drought>0)
+
+
+write.table(month_precip,'data_potsdam.txt')
+write.table(droughts,'data2_potsdam.txt')
+
+

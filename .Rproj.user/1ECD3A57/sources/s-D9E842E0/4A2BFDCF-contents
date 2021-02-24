@@ -1,0 +1,53 @@
+wd <- 'C:/Users/pedro/OneDrive/@DOUTORADO/@@TU-Berlin/@Artigos/CAP 5/R'
+setwd(wd)
+
+##for data from brasil
+station_data <- read.delim('739038.txt')
+colnames(station_data) <- c('station','year','month',1:31)
+head(station_data,5)
+
+vertical_data <- tidyr::gather(station_data, key = day, value = precip, 4:34)
+
+vertical_data$date <- as.Date(paste(as.character(vertical_data$year),
+                                    as.character(vertical_data$month),
+                                    as.character(vertical_data$day),sep = '-'))
+head(vertical_data,5)
+
+consol_data <- data.frame(date = seq.Date(as.Date('1911-1-1'),as.Date('2020-12-31'),by = 'day'))
+head(consol_data,5)
+
+consol_data$precip <- expss::vlookup(consol_data$date, vertical_data, result_column = 5,
+                              lookup_column = 6)
+
+head(consol_data,5)
+class(consol_data)
+ceara <- consol_data
+
+hist_plot()
+
+data <- ceara %>% get_spi(k = 3) %>% get_data()
+
+param_sev <- get_parameters(data$severity)
+get_metric(param = param_sev, series = data$severity)
+
+param_dur <- get_parameters(data$duration)
+get_metric(param = param_dur, series = data$duration)
+
+
+
+
+potsdam <- read.delim('potsdam2.txt', sep = '\t')
+potsdam <- data.frame(date = lubridate::ymd(potsdam$date), value = as.numeric(potsdam$precip))
+potsdam_events <- potsdam %>% get_spi_m(k = 3) %>% get_data()
+
+hist_plot(potsdam_events)
+
+param_sev <- get_parameters(potsdam_events$severity)
+get_metric(param = param_sev, series = potsdam_events$severity)
+
+param_dur <- get_parameters(potsdam_events$duration)
+get_metric(param = param_dur, series = potsdam_events$duration)
+
+
+
+

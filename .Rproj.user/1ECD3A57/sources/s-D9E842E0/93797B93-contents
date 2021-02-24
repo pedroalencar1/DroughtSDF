@@ -1,0 +1,36 @@
+get_data <- function(df){
+
+  import::from(magrittr, "%>%")
+
+  df[is.na(df)] <- 0
+
+  df$is.drought <- (df$spi < 0)*1
+  df$sev <- 0
+  df$dur <- 0
+
+  for (i in 2:nrow(df)){
+    df$sev[i] <- (df$spi[i] + df$sev[i-1])*df$is.drought[i]
+    df$dur[i] <-(1 + df$dur[i-1])*df$is.drought[i]
+  }
+
+  year_sev <- tibble::tibble(time = as.POSIXct(df[,1]),
+                             value = df[,4]) %>%  tibbletime::as_tbl_time(time)
+  year_sev <- tibbletime::collapse_by(year_sev, period = 'year')
+  year_sev <- year_sev %>% dplyr::group_by(time) %>%
+    dplyr::summarise(sev = min(.data[["value"]]))
+
+  year_dur <- tibble::tibble(time = as.POSIXct(df[,1]),
+                             value = df[,5]) %>%  tibbletime::as_tbl_time(time)
+  year_dur <- tibbletime::collapse_by(year_dur, period = 'year')
+  year_dur <- year_dur %>% dplyr::group_by(time) %>%
+    dplyr::summarise(dur = max(.data[["value"]]))
+
+  year_crit <- data.frame(year = lubridate::year(year_sev$time), severity = -1*year_sev$sev,
+                          duration = year_dur$dur)
+
+  aux <- apply(year_crit, 1, function(row) all(row !=0 ))
+  year_crit <- year_crit[aux,]
+
+  return(year_crit)
+}
+

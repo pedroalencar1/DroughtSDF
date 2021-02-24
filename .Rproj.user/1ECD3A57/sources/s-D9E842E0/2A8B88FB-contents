@@ -1,0 +1,236 @@
+library(readxl)
+library(reshape2)
+library(data.table)
+library(dplyr)
+library(ggplot2)
+library(ggforce)
+library(gridExtra)
+library(gtable)
+library(grid)
+
+
+get_spi <- function(df, k = 3){
+
+  df_month <- tibble::tibble(time = as.POSIXct(df[,1]),
+                             value = df[,2]) %>%  as_tbl_time(time)
+  df_month <- tibbletime::collapse_by(df_month, period = 'month')
+  df_month <- df_month %>% dplyr::group_by(time) %>%
+    summarise(value = sum(.data[["value"]]))
+
+  spi <- SPEI::spi(df_month[,2], k, na.rm = T)
+
+  series_spi <- data.frame(time = df_month[,1], spi = spi$fitted)
+  colnames(series_spi) <- c('time', 'spi')
+  return(series_spi)
+}
+
+
+
+get_data <- function(df){
+
+  df[is.na(df)] <- 0
+
+  df$is.drought <- (df$spi < 0)*1
+  df$sev <- 0
+  df$dur <- 0
+
+  for (i in 2:nrow(df)){
+    df$sev[i] <- (df$spi[i] + df$sev[i-1])*df$is.drought[i]
+    df$dur[i] <-(1 + df$dur[i-1])*df$is.drought[i]
+  }
+
+  year_sev <- tibble::tibble(time = as.POSIXct(df[,1]),
+                             value = df[,4]) %>%  as_tbl_time(time)
+  year_sev <- tibbletime::collapse_by(year_sev, period = 'year')
+  year_sev <- year_sev %>% dplyr::group_by(time) %>%
+    summarise(sev = min(.data[["value"]]))
+
+  year_dur <- tibble::tibble(time = as.POSIXct(df[,1]),
+                             value = df[,5]) %>%  as_tbl_time(time)
+  year_dur <- tibbletime::collapse_by(year_dur, period = 'year')
+  year_dur <- year_dur %>% dplyr::group_by(time) %>%
+    summarise(dur = max(.data[["value"]]))
+
+  year_crit <- data.frame(year = year(year_sev$time), severity = -1*year_sev$sev,
+                          duration = year_dur$dur)
+
+  aux <- apply(year_crit, 1, function(row) all(row !=0 ))
+  year_crit <- year_crit[aux,]
+
+  return(year_crit)
+}
+
+hist_plot <- function(df, view = T){
+  # library(grid)
+
+  melt_df <- data.table::melt(df, id.vars = 'year', value.name = 'value')
+
+  n_bins <- floor(max(diff(range(df$duration)),diff(range(df$severity)))/
+                    (2*max(IQR(df$duration),IQR(df$severity))*nrow(df)^(-1/3)))
+
+  ### ploting
+  ggplot2::theme_set(theme_minimal())
+  plot1 <- ggplot2::ggplot(data = melt_df, aes(x = value, fill = variable))+
+    geom_histogram(alpha = 0.5, position = "identity", bins = n_bins)+
+    ggtitle(paste('Histograms of drought severity and duration - ',
+                  deparse(substitute(df)), sep = ''))
+
+
+  plot2 <- ggplot2::ggplot(data = df, aes(x = duration))+
+    geom_histogram(alpha = 1, position = "identity", bins = n_bins,
+                   aes(y = ..density..))+
+    geom_density(alpha = 0.5, fill = "lightblue")
+
+  plot3 <- ggplot2::ggplot(data = df, aes(x = severity))+
+    geom_histogram(alpha = 1, position = "identity", bins = n_bins,
+                   aes(y = ..density..))+
+    geom_density(alpha = 0.5, fill = "pink")
+
+  ###plot
+  if (view){
+    view_aux <-grid::viewport(layout = grid.layout(2, 2))
+    grid::pushViewport(view_aux)
+    vplayout <- function(x, y) grid::viewport(layout.pos.row = x, layout.pos.col = y)
+    print(plot1, vp = vplayout(1, 1:2))
+    print(plot2, vp = vplayout(2, 1))
+    print(plot3, vp = vplayout(2, 2))
+  }
+
+  #export
+  png(filename=paste(deparse(substitute(df)),'_hist.png', sep = ''), width=600, bg="white")
+  par(mar=c(5,11,1,1)+.1)
+  grid::pushViewport(view_aux)
+  vplayout <- function(x, y) grid::viewport(layout.pos.row = x, layout.pos.col = y)
+  print(plot1, vp = vplayout(1, 1:2))
+  print(plot2, vp = vplayout(2, 1))
+  print(plot3, vp = vplayout(2, 2))
+  dev.off()
+
+  print('Check file in your work directory')
+
+}
+
+# hist_plot(ceara_events)
+
+get_parameters <- function(df){
+
+  #parameters obtained with the Principle of Maximum Entropy
+  #For more info see Singh 1998 (Entropy-based parameter estimation in hydrology)
+
+  df <-ceara_events$severity
+
+  df <- data.frame(data = sort(df))
+  df$ln <- log(df$data)
+
+  mean_data <- mean(df$data)
+  mean_ln <- mean(df$ln)
+
+
+  param <- list(NA)
+  #exponential
+  param[['exponential']]['a'] <- 1/mean_data
+
+  #lognormal
+  param[['lognormal']]['a'] <- mean_ln
+  param[['lognormal']]['b'] <- sqrt(mean(df$ln^2) - mean_ln^2)
+
+  #gamma
+  f_gamma <- function(b) {
+    abs(digamma(b) - log(b) + 0.59)
+  }
+  aux_gamma <- stats::optimize(f = f_gamma, interval = c(1e-8,1e8))$minimum
+
+  param[['gamma']]['a'] <- mean_data/aux_gamma
+  param[['gamma']]['b'] <- aux_gamma
+
+  #Weibul
+  aux_weibul_b <- exp(digamma(1) - mean_ln)
+
+  f_weibul <- function(a){
+    aux <- mean(log(df$data^a))
+    abs(aux^(1/a) - aux_weibul_b)
+  }
+  aux_weibul_a <- stats::optimize(f = f_weibul, interval = c(1e-6,4))$minimum
+
+  param[['weibul']]['a'] <- aux_weibul_a
+  param[['weibul']]['b'] <- aux_weibul_b
+
+  #log-logistic
+  f_loglogist1 <- function(a){
+    abs(mean(log(df$data/a)))
+  }
+
+  aux_loglogist_a <- stats::optimize(f = f_loglogist1, interval = c(1e-8,1e8))$minimum
+
+  f_loglogist2 <- function(b){
+    aux <- mean(log(1+ (df$data/aux_loglogist_a)^b))
+    abs(aux - 1)
+  }
+
+  aux_loglogist_b <- stats::optimize(f = f_loglogist2, interval = c(1e-8,1e2))$minimum
+
+
+  param[['loglogist']]['a'] <- aux_loglogist_a
+  param[['loglogist']]['b'] <- aux_loglogist_b
+
+  param <- param[-1]
+  return(param)
+}
+
+#example
+ceara_events <-  get_spi(ceara, k = 3) %>% get_data()
+hist_plot(ceara_events)
+
+#calibrate pdf
+param_sev <- get_parameters(ceara_events$severity)
+param_dur <- get_parameters(ceara_events$duration)
+
+get_metric <- function(param, series){
+
+  series <- ceara_events$severity
+  series <- sort(series)
+  param <- param_sev
+
+  empiric <- seq(from = 1/(length(series) + 1), by = 1/(length(series) + 1),
+                 length.out = length(series))
+
+  prob <- data.frame(data = series, emp = empiric)
+
+
+  prob$exponential <- stats::pexp(prob$data,
+                                  rate = param$exponential['a'])
+
+  prob$lognormal <- stats::plnorm(prob$data,
+                                  meanlog  = param$lognormal['a'],
+                                  sdlog  = param$lognormal['b'])
+
+  prob$gamma <- stats::pgamma(prob$data,
+                              shape = param$gamma['b'],
+                              scale = param$gamma['a'])
+
+  prob$weibul <- stats::pweibull(prob$data,
+                                 shape = param$weibul['a'],
+                                 scale = param$weibul['b'])
+
+  prob$loglogist <- actuar::pllogis(prob$data,
+                                    shape = param$loglogist['a']*param$loglogist['b'],
+                                    scale = param$loglogist['a'])
+
+
+  metric <- data.frame(distribution =colnames(prob)[3:7], KS_dist = NA,
+                       rmse = NA, nse = NA)
+
+  for (i in 1:5){
+    metric$KS_dist[i] <- max(abs(prob$emp - prob[,2+i]))
+    metric$rmse[i] <- sqrt(mean((prob$emp - prob[,2+i])^2))
+    metric$nse[i] <- 1 - sum((prob$emp - prob[,2+i])^2)/sum((prob$emp - mean(prob$emp))^2)
+  }
+
+  return(metric)
+}
+
+
+
+
+
+
