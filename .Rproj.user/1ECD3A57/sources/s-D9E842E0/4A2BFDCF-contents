@@ -33,6 +33,9 @@ get_metric(param = param_sev, series = data$severity)
 param_dur <- get_parameters(data$duration)
 get_metric(param = param_dur, series = data$duration)
 
+get_multipliers(param_sev)
+get_multipliers(param_dur)
+
 
 
 
@@ -47,6 +50,15 @@ get_metric(param = param_sev, series = potsdam_events$severity)
 
 param_dur <- get_parameters(potsdam_events$duration)
 get_metric(param = param_dur, series = potsdam_events$duration)
+
+get_multipliers(param_sev)
+get_multipliers(param_dur)
+
+
+
+
+
+
 
 
 
