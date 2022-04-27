@@ -15,12 +15,13 @@
 #'
 #'
 get_data_station_MECC <- function(station_id, var_name='kl', date_bounds = NA){
-  # station_id <- 3987
+  # station_id <- 880
   # var_name <- 'kl'
   # date_bounds <- c("1921-1-1", "2020-12-31")
   # rain_threshold <- 1
 
-  link <- selectDWD(id=station_id, res='daily', var = var_name, per='rh')
+  # adding `current = T` it takes longer but makes the function more resilient to updates
+  link <- selectDWD(id=station_id, res='daily', var = var_name, per='rh', current = T)
 
   meta_data <- metaInfo(station_id) #metadata
 

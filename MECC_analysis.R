@@ -15,11 +15,14 @@ pacman::p_load('pracma')
 
 
 # select station
-id_station <- rdwd::findID("Saekularstation", exactmatch=FALSE)
+# id_station <- rdwd::findID("Saekularstation", exactmatch=FALSE)
+id_station <- rdwd::findID("Cottbus", exactmatch=FALSE)
+id_station
 
 # get data
-data_station <- get_data_station_MECC(3988, var_name='kl',
+data_station <- get_data_station_MECC(station_id = 880, var_name='kl',
                                       date_bounds = NA)
+
 
 # Calculate ETP
 station_etp <- calculate_ETP_daily_MECC(input_type = 'dwd', list_data = data_station,
@@ -94,6 +97,8 @@ copula_comparison |> mutate(diff = Tr_ref - Tr_new,
   ggtitle('Changes in the return period of reference events')+
   labs(x = 'Severity',
        y = 'Duration (months)')
+ggsave('Potsdam_1.png')
+
 
 
 # get_distribution_comparison
@@ -129,6 +134,7 @@ ggplot2::ggplot(dist_comparison1, aes(x = x, y = y))+
   theme_update(aspect.ratio=1)+
   geom_point(inherit.aes = F, data = series1, aes(x = sev, y = dur), alpha = 0.5)+
   geom_point(inherit.aes = F, data = series2, aes(x = sev, y = dur), alpha = 0.5, col ='red')
+ggsave('Potsdam_2.png')
 
 
 
