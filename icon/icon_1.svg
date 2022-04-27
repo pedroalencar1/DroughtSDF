@@ -9,4 +9,6 @@
 	<use id="Background" href="#img1" x="0" y="40"/>
 	<path id="Shape 1" class="s0" d="m0 40h518v1h-518z"/>
 	<path id="Shape 2" class="s0" d="m48 100h7v7h-7z"/>
+	<path id="Shape 3" class="s0" d="m93 75h1v1h-1z"/>
+	<path id="Shape 4" class="s0" d="m0 40h476v3h-476z"/>
 </svg>
