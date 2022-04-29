@@ -2,14 +2,7 @@
 % Please edit documentation in R/MECC_functions.R
 \name{get_return_periods}
 \alias{get_return_periods}
-\title{#' function to obtain Copula and Survival Copula distributions
-#'
-#' @param copula_mult vector with the six copula lagrange multipliers (in this orther: *Lambda_0*,
-#' *Lambda_1*, and *Lambda_2*, *Gamma_1*, *Gamma_2*, and *Lambda_3*). Preferably the output from `get_copula_multipliers()`
-#'
-#' @return a 4 column data frame with x and y values for mapping, and the values of Copula and Survival Copula distributions.
-get_distribution_comparison <- function(){}
-function to obtain the return period of the copula to particular event features (based on the probability of the marginals)}
+\title{function to obtain the return period of the copula to particular event features (based on the probability of the marginals)}
 \usage{
 get_return_periods(data, d, marginal_mult, copula_mult, p_values)
 }
@@ -25,12 +18,5 @@ Preferably the output of `get_marginal_multipliers()`}
 \item{p_values}{vector with values between 0 and 1, they are probabilities of interest. Default = `c(0.8,0.9,0.95,0.98,0.99)`}
 }
 \description{
-#' function to obtain Copula and Survival Copula distributions
-#'
-#' @param copula_mult vector with the six copula lagrange multipliers (in this orther: *Lambda_0*,
-#' *Lambda_1*, and *Lambda_2*, *Gamma_1*, *Gamma_2*, and *Lambda_3*). Preferably the output from `get_copula_multipliers()`
-#'
-#' @return a 4 column data frame with x and y values for mapping, and the values of Copula and Survival Copula distributions.
-get_distribution_comparison <- function(){}
 function to obtain the return period of the copula to particular event features (based on the probability of the marginals)
 }

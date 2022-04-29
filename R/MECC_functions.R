@@ -13,6 +13,7 @@
 #'
 #' @details To avoid errors and NA values in the SPEI and drought computation, preferably keep `date_bounds = NA`
 #'
+#'@export
 #'
 get_data_station_MECC <- function(station_id, var_name='kl', date_bounds = NA){
   # station_id <- 880
@@ -122,6 +123,7 @@ get_data_station_MECC <- function(station_id, var_name='kl', date_bounds = NA){
 #' All inputs (expect `station_metadata`) are available in the first element of the output of function `get_data_station()`.
 #' For clarity, they can be incerted separatly
 #'
+#' @export
 #'
 calculate_ETP_daily_MECC <- function(input_type = 'dwd', list_data = NA, date = NA, t_max = NA,
                                      t_min = NA, rh = NA, rh_max = NA, rh_min = NA, n_hours = NA,
@@ -222,6 +224,8 @@ calculate_ETP_daily_MECC <- function(input_type = 'dwd', list_data = NA, date = 
                          n = n_hours, Cd = cloud_cover, uz = mean_wind)
 
     # load in pre-set constants and variables for the ETP Calculations
+
+    require(Evapotranspiration)
     data("constants")
 
     constants$lat <- station_metadata$latitude
@@ -286,6 +290,7 @@ calculate_ETP_daily_MECC <- function(input_type = 'dwd', list_data = NA, date = 
 #' @param ETP series of minimum daily potential evapotranspiration (mm), preferably obtained with `calculate_ETP_daily_MECC()`
 #' @param scale integer, the number of months for accumulation computation
 #'
+#'@export
 #'
 calculate_SPEI_MECC <- function(Date, Precipitation, ETP, scale = 3){
 
@@ -320,6 +325,7 @@ calculate_SPEI_MECC <- function(Date, Precipitation, ETP, scale = 3){
 #' @param threshold scalar, maximum value of SPEI for a period to be classified as droguht
 #' @param year_bounds vector with two integer values, the years of beggining and end of analysis
 #'
+#'@export
 #'
 get_drought_series <- function(Date, SPEI, threshold = 0, year_bounds = c(1900,2019)){
 
@@ -369,6 +375,9 @@ get_drought_series <- function(Date, SPEI, threshold = 0, year_bounds = c(1900,2
 #' Function to download MATLAB files from github
 #'
 #' @details no input is require. The files are saved in the WD.
+#'
+#' @export
+#'
 get_matlab_files_MECC <- function(){
 
   download.file(url = "https://github.com/pedroalencar1/DroughtSDF/tree/master/Matlab/R_Copula.m"
@@ -406,6 +415,9 @@ get_matlab_files_MECC <- function(){
 #'   values_p = a sequence of numbers (until the end of the file) with values in (0,1) of
 #'   probabilities of interest to compute the return periods.
 #' @param input_series dataframe with 3 columns. Columns are YEARS, X1 (SEVERITY), X2(DURATION)
+#'
+#' @export
+#'
 run_matlab_MECC <- function(input_data, input_series){
 
   write.table(input_data, 'input_data.csv', row.names = F, col.names = F)
@@ -428,6 +440,9 @@ run_matlab_MECC <- function(input_data, input_series){
 #' @details the default value of `d` is 0.01 (Zhang and Singh, 2019)
 #'
 #' @return a vector with three values, the Lagrangian multipliers *Lambda_0*, *Lambda_1*, and *Lambda_2*
+#'
+#' @export
+#'
 marginal_interval <- function(data, d = 0.01){
 
   data_raw <- data %>%
@@ -444,6 +459,9 @@ marginal_interval <- function(data, d = 0.01){
 #' @param data_column column containing the data of the analysed variable. Preferably the output of `get_drought_series()`
 #'
 #' @return a vector with 2 values, *c1* and *c2*
+#'
+#' @export
+#'
 get_1d_constraints <- function(data_column){
   # data_column <- data$sev
 
@@ -459,6 +477,9 @@ get_1d_constraints <- function(data_column){
 #' @param data_series data frame with the columns of the variables to be analysed. Preferably a subset of the output of function `marginal_interval()`
 #'
 #' @return a data frame with three columns, the Lagrangian multipliers *Lambda_0*, *Lambda_1*, and *Lambda_2*
+#'
+#' @export
+#'
 get_marginal_multipliers <- function(data_series){
 
   # data_series <- data[,4:5]
@@ -499,6 +520,9 @@ get_marginal_multipliers <- function(data_series){
 #' @param mult data frame with three columns (three multipliers) and two rows (severity and duration). Preferably the output of `get_marginal_multipliers()`
 #'
 #' @return a vector with three values, the Lagrangian multipliers *Lambda_0*, *Lambda_1*, and *Lambda_2*
+#'
+#' @export
+#'
 get_marginal_distribution <- function(data, mult){
   ## uncomment to test function
   # data <- series1
@@ -526,6 +550,9 @@ get_marginal_distribution <- function(data, mult){
 #'
 #' @return a numeric vector with names and six elements, the Lagrangian multipliers *Lambda_0*,
 #' *Lambda_1*, and *Lambda_2*, *Gamma_1*, *Gamma_2*, and *Lambda_3*
+#'
+#' @export
+#'
 get_copula_multipliers <- function(data){
 
   #calculate copula constraint based on spearman correlation
@@ -561,6 +588,9 @@ get_copula_multipliers <- function(data){
 #' *Lambda_1*, and *Lambda_2*, *Gamma_1*, *Gamma_2*, and *Lambda_3*). Preferably the output from `get_copula_multipliers()`
 #'
 #' @return a 4 column data frame with x and y values for mapping, and the values of Copula and Survival Copula distributions.
+#'
+#' @export
+#'
 get_copula_distribution <- function(copula_mult){
 
  copula <- function(x,y) exp(copula_mult[1] -copula_mult[2]*(x) - copula_mult[3]*(x^2) - copula_mult[4]*(y) -
@@ -593,13 +623,13 @@ get_copula_distribution <- function(copula_mult){
 }
 
 
-#' #' function to obtain Copula and Survival Copula distributions
-#' #'
-#' #' @param copula_mult vector with the six copula lagrange multipliers (in this orther: *Lambda_0*,
-#' #' *Lambda_1*, and *Lambda_2*, *Gamma_1*, *Gamma_2*, and *Lambda_3*). Preferably the output from `get_copula_multipliers()`
-#' #'
-#' #' @return a 4 column data frame with x and y values for mapping, and the values of Copula and Survival Copula distributions.
-#' get_distribution_comparison <- function(){}
+# #' function to obtain Copula and Survival Copula distributions
+# #'
+# #' @param copula_mult vector with the six copula lagrange multipliers (in this orther: *Lambda_0*,
+# #' *Lambda_1*, and *Lambda_2*, *Gamma_1*, *Gamma_2*, and *Lambda_3*). Preferably the output from `get_copula_multipliers()`
+# #'
+# #' @return a 4 column data frame with x and y values for mapping, and the values of Copula and Survival Copula distributions.
+# get_distribution_comparison <- function(){}
 
 
 #' function to obtain the return period of the copula to particular event features (based on the probability of the marginals)
@@ -612,6 +642,8 @@ get_copula_distribution <- function(copula_mult){
 #' @param copula_mult vector with the six copula lagrange multipliers (in this orther: *Lambda_0*,
 #' *Lambda_1*, and *Lambda_2*, *Gamma_1*, *Gamma_2*, and *Lambda_3*). Preferably the output from `get_copula_multipliers()`
 #' @param p_values vector with values between 0 and 1, they are probabilities of interest. Default = `c(0.8,0.9,0.95,0.98,0.99)`
+#'
+#'@export
 #'
 get_return_periods <- function(data, d, marginal_mult, copula_mult, p_values){
 
@@ -699,6 +731,8 @@ get_return_periods <- function(data, d, marginal_mult, copula_mult, p_values){
 #' copula-based return period for the reference period. Preferably the output from get_return_periods
 #' @param d a small value between zero and one. It is used bind the distribution to a open interval between zero and one, i.e. ]0,1[
 #'
+#'@export
+#'
 get_comparison_tr <- function(data_study, return_periods_reference, d){
 
   data_study <- series2
@@ -775,6 +809,8 @@ get_comparison_tr <- function(data_study, return_periods_reference, d){
 #' transformations and the entropy-based marginals for the STUDY period of interest. Preferably
 #' the output of `get_marginal_distribution()`.
 #' @param d a small value between zero and one. It is used bind the distribution to a open interval between zero and one, i.e. ]0,1[
+#'
+#'@export
 #'
 get_distribution_comparison <- function(data_study, data_reference, d){
 
@@ -861,6 +897,8 @@ get_distribution_comparison <- function(data_study, data_reference, d){
 #' the return period of reference (Tr_ref) and the return period of the study (Tr_new). Preferably the output
 #' of function `get_comparison_tr()`.
 #'
+#'@export
+#'
 plot_tr_comparison <- function(tr_comparison){
 
   plot <- tr_comparison |> mutate(diff = Tr_ref - Tr_new,
@@ -887,6 +925,8 @@ plot_tr_comparison <- function(tr_comparison){
 #' transformations and the entropy-based marginals for the STUDY period of interest. Preferably
 #' the output of `get_marginal_distribution()`.
 #' @param na.rm logical. Default is True. NA values are filled with `tidyr::fill(direction = 'down')`
+#'
+#'@export
 #'
 plot_tr_distribution_comparison <- function(tr_dist_comparison, data_reference, data_study,
                                             na.rm = F){
