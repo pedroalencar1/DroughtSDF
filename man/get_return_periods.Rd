@@ -7,6 +7,9 @@
 get_return_periods(data, d, marginal_mult, copula_mult, p_values)
 }
 \arguments{
+\item{data}{data frame with seven columns containing years, severity and duration, its
+transformations and the entropy-based marginals. Preferably the output of `get_marginal_distribution()`}
+
 \item{d}{a small value between zero and one. It is used bind the distribution to a open interval between zero and one, i.e. ]0,1[}
 
 \item{marginal_mult}{data frame with three columns (three multipliers) and two rows (severity and duration).

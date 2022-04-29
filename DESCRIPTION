@@ -8,5 +8,27 @@ Description: This package uses the principle of maximum entropy (Shannon, 1948) 
 License: MIT License Copyright (c) 2021 Pedro Alencar
 Encoding: UTF-8
 LazyData: true
-Imports: tidyr,dplyr,ggplot2,ggpubr,metR,rdwd,SPEI,tibble,tibbletime,lubridate,magrittr,ggforce,Evapotranspiration,metR
+Imports: 
+    tidyr,
+    dplyr,
+    ggplot2,
+    ggpubr,
+    metR,
+    rdwd,
+    SPEI,
+    tibble,
+    tibbletime,
+    lubridate,
+    magrittr,
+    ggforce,
+    Evapotranspiration,
+    zoo,
+    pracma
+Suggests:
+    knitr,
+    devtools,
+    roxygen2,
 RoxygenNote: 7.1.2
+VignetteBuilder: knitr
+Depends: 
+    R (>= 2.10)
