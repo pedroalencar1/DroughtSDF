@@ -14,8 +14,6 @@
 #' @param n_param Number of parameters of the Log-logist distribution (either 2
 #' or 3).
 #'
-#'
-#'
 #' @return
 #' @export
 #'
@@ -95,4 +93,41 @@ f_spei <- function(vtime, vdeficit, n){
     spei_time <- data.frame(date = vtime,spei = spei_list[1:length(vtime)])
 
     return(spei_time)
+}
+
+
+#' Suppress function messages and Concatenate and Print (cat)
+#'
+#' @param ... the functional expression to be evaluated
+#' @param messages logical; suppress all messages?
+#' @param cat logical; suppress all concatenate and print calls from \code{\link{cat}}?
+#'
+#' @export
+#'
+#' @references
+#' RDRR <https://rdrr.io/cran/SimDesign/src/R/util.R> (line)
+#'
+#' @examples
+#' myfun <- function(x){
+#'    message('This function is rather chatty')
+#'    cat("It even prints in different output forms!\n")
+#'    message('And even at different....')
+#'    cat("...times!\n")
+#'    x
+#' }
+#'
+#' out <- myfun(1)
+#' out
+#'
+#' # tell the function to shhhh
+#' out <- quiet(myfun(1))
+#' out
+#'
+quiet <- function(..., messages=FALSE, cat=FALSE){
+    if(!cat){
+        sink(tempfile())
+        on.exit(sink())
+    }
+    out <- if(messages) eval(...) else suppressMessages(eval(...))
+    out
 }

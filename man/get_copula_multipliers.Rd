@@ -4,16 +4,47 @@
 \alias{get_copula_multipliers}
 \title{function to calculate the copula's Lagrange multipliers}
 \usage{
-get_copula_multipliers(data)
+get_copula_multipliers(data, guess = c(1, 10, 1, 10, -100), test_solutions = F)
 }
 \arguments{
 \item{data}{data frame with seven columns containing years, severity and duration, its
 transformations and the entropy-based marginals. Preferably the output of `get_marginal_distribution()`}
+
+\item{guess}{a vector with 5 values.}
+
+\item{test_solutions}{Boolean. If `TRUE`, a list of other possible guesses will be tested
+if the user's provided guess do not converge to a solution.}
 }
 \value{
-a numeric vector with names and six elements, the Lagrangian multipliers *Lambda_0*,
+The function returns a numeric vector with names and six elements, the Lagrangian multipliers *Lambda_0*,
 *Lambda_1*, and *Lambda_2*, *Gamma_1*, *Gamma_2*, and *Lambda_3*
 }
 \description{
 function to calculate the copula's Lagrange multipliers
+}
+\details{
+for the initial `guess` provided as input, in drought analysis applications the
+4 initial values are positive and the last is negative. Other observed (but not proved)
+relations between final values and that may help with the initial guess are:
+i1 = i3, i2 = i4, i1 < i2 < abs(i5).
+When `test_solutions==TRUE`, a list of guesses is built with the user's proposed guess and
+an additional (fixed) list of possible solutions. We suggest keeping this value equal to TRUE
+int he first run. If, after all guesses are tested, a solution was not found, please switch
+it to FALSE and test other possible values individually. The additional guesses tested are:
+
+`list_guesses <- list(guess,
+                     c(1,1,1,1,-1),
+                     c(5,5,5,5,-5),
+                     c(10,10,10,10,-10),
+                     c(20,20,20,20,-20),
+                     c(1,65,1,65,-130),
+                     c(2,55,2,55,-110),
+                     c(3,45,3,45,-90),
+                     c(4,35,4,35,-70),
+                     c(5,25,5,25,-50),
+                     c(1,35,1,35,-80),
+                     c(2,30,2,30,-70),
+                     c(3,25,3,25,-60),
+                     c(4,20,4,20,-50),
+                     c(5,15,5,15,-40))`
 }

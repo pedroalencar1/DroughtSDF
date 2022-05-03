@@ -23,26 +23,32 @@ get_data_station_MECC <- function(station_id, var_name='kl', date_bounds = NA){
     # rain_threshold <- 1
 
     # adding `current = T` it takes longer but makes the function more resilient to updates
-    link <- rdwd::selectDWD(id=station_id, res='daily', var = var_name, per='rh', current = T)
+    link <- quiet(rdwd::selectDWD(id=station_id, res='daily', var = var_name, per='rh',
+                            current = T, quiet = T)
+                  )
 
-    meta_data <- rdwd::metaInfo(station_id) #metadata
+    meta_data <- quiet(rdwd::metaInfo(station_id, FALSE) #metadata
+                       )
 
     # check if variable is available
     if (var_name %in% meta_data$var){
         data <- data.frame()
 
         if (link[1] == link[2]){
-            data <-  rdwd::readDWD(rdwd::dataDWD(link[1], read=FALSE), varnames=TRUE, fread = F)
+            data <-  rdwd::readDWD(rdwd::dataDWD(link[1], read=FALSE, quiet = T),
+                                   varnames=TRUE, fread = F, quiet = T)
         } else {
             # join data from both recent and historical data sets
             if (grepl('historical', link[2])){
                 # without fread it is slower, but more reliable
-                data_2 <- rdwd::readDWD(rdwd::dataDWD(link[2], read=FALSE), varnames=TRUE, fread = F)
+                data_2 <- rdwd::readDWD(rdwd::dataDWD(link[2], read=FALSE, quiet = T),
+                                        varnames=TRUE,fread = F, quiet = T)
                 data <- rbind(data, data_2)
             }
             if (grepl('recent', link[1])){
                 # without fread it is slower, but more reliable
-                data_1 <- rdwd::readDWD(rdwd::dataDWD(link[1], read=FALSE), varnames=TRUE, fread = F)
+                data_1 <- rdwd::readDWD(rdwd::dataDWD(link[1], read=FALSE, quiet = T),
+                                        varnames=TRUE,fread = F, quiet = T)
                 data <- rbind(data, data_1)
             }
 
@@ -50,6 +56,7 @@ get_data_station_MECC <- function(station_id, var_name='kl', date_bounds = NA){
         # filter data by dates, if bounds are provided
         if (!is.na(date_bounds)){
             data %<>% dplyr::filter(., MESS_DATUM >= date_bounds[1], MESS_DATUM <= date_bounds[2]) %>%
+                suppressWarnings()%>%
                 dplyr::mutate(Date= .$MESS_DATUM) %>% tidyr::complete(Date= seq(from = as.Date(date_bounds[1]),
                                                                                 to = as.Date(date_bounds[2]),
                                                                                 by = "day"))
@@ -60,6 +67,7 @@ get_data_station_MECC <- function(station_id, var_name='kl', date_bounds = NA){
             date_bounds <- zoo::as.Date(date_bounds)
 
             data %<>% dplyr::filter(., MESS_DATUM >= date_bounds[1], MESS_DATUM <= date_bounds[2]) %>%
+                suppressWarnings()%>%
                 dplyr::mutate(Date= .$MESS_DATUM) %>% complete(Date= seq(from = as.Date(date_bounds[1]),
                                                                          to = as.Date(date_bounds[2]),
                                                                          by = "day"))

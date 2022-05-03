@@ -21,9 +21,9 @@ calculate_ETP_daily_MECC(
 )
 }
 \arguments{
-\item{input_type}{character string. Either "DWD" (to use the output of function `get_data_station()`) or "MANUAL" to give each variable manually}
+\item{input_type}{character string. Either "DWD" (to use the output of function `get_data_station_MECC()`) or "MANUAL" to give each variable manually}
 
-\item{list_data}{if `input_type == "DWD"`, the output of `get_data_station()`, else it is `NA`}
+\item{list_data}{if `input_type == "DWD"`, the output of `get_data_station_MECC()`, else it is `NA`}
 
 \item{date}{series of dates (daily) to be of the time series.}
 

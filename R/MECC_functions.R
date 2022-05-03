@@ -118,18 +118,57 @@ get_marginal_distribution <- function(data, mult){
 #' @param data data frame with seven columns containing years, severity and duration, its
 #' transformations and the entropy-based marginals. Preferably the output of `get_marginal_distribution()`
 #' @param guess a vector with 5 values.
+#' @param test_solutions Boolean. If `TRUE`, a list of other possible guesses will be tested
+#' if the user's provided guess do not converge to a solution.
 #'
 #' @details for the initial `guess` provided as input, in drought analysis applications the
 #' 4 initial values are positive and the last is negative. Other observed (but not proved)
 #' relations between final values and that may help with the initial guess are:
 #' i1 = i3, i2 = i4, i1 < i2 < abs(i5).
+#' When `test_solutions==TRUE`, a list of guesses is built with the user's proposed guess and
+#' an additional (fixed) list of possible solutions. We suggest keeping this value equal to TRUE
+#' int he first run. If, after all guesses are tested, a solution was not found, please switch
+#' it to FALSE and test other possible values individually. The additional guesses tested are:
 #'
-#' @return a numeric vector with names and six elements, the Lagrangian multipliers *Lambda_0*,
+#' `list_guesses <- list(guess,
+#'                      c(1,1,1,1,-1),
+#'                      c(5,5,5,5,-5),
+#'                      c(10,10,10,10,-10),
+#'                      c(20,20,20,20,-20),
+#'                      c(1,65,1,65,-130),
+#'                      c(2,55,2,55,-110),
+#'                      c(3,45,3,45,-90),
+#'                      c(4,35,4,35,-70),
+#'                      c(5,25,5,25,-50),
+#'                      c(1,35,1,35,-80),
+#'                      c(2,30,2,30,-70),
+#'                      c(3,25,3,25,-60),
+#'                      c(4,20,4,20,-50),
+#'                      c(5,15,5,15,-40))`
+#'
+#'
+#' @return The function returns a numeric vector with names and six elements, the Lagrangian multipliers *Lambda_0*,
 #' *Lambda_1*, and *Lambda_2*, *Gamma_1*, *Gamma_2*, and *Lambda_3*
 #'
 #' @export
 #'
-get_copula_multipliers <- function(data, guess = c(10,10,10,10,-10)){
+get_copula_multipliers <- function(data, guess = c(1,10,1,10,-100), test_solutions = F){
+
+  list_guesses <- list(guess,
+                       c(1,1,1,1,-1),
+                       c(5,5,5,5,-5),
+                       c(10,10,10,10,-10),
+                       c(20,20,20,20,-20),
+                       c(1,65,1,65,-130),
+                       c(2,55,2,55,-110),
+                       c(3,45,3,45,-90),
+                       c(4,35,4,35,-70),
+                       c(5,25,5,25,-50),
+                       c(1,35,1,35,-80),
+                       c(2,30,2,30,-70),
+                       c(3,25,3,25,-60),
+                       c(4,20,4,20,-50),
+                       c(5,15,5,15,-40))
 
   #calculate copula constraint based on spearman correlation
   Euv <- cor(x = data[,6], y = data[,7], method = 'spearman')
@@ -140,9 +179,41 @@ get_copula_multipliers <- function(data, guess = c(10,10,10,10,-10)){
     exp(-a[1]*(x - 0.5) - a[2]*(x^2 - 0.333333) - a[3]*(y - 0.5) - a[4]*(y^2 - 0.333333) - a[5]*(x*y - Euv)),
     xmin = 0,xmax = 1, ymin = 0, ymax = 1)$Q
 
-  #solve integral
-  multipliers <- pracma::fminsearch(fun_obj, guess, method="Nelder-Mead",
-                                 maxiter = 10000)$xmin
+
+  # Check if algorithm should run only user's guess or also the entire list
+  if (test_solutions){
+    # test_solutions == TRUE!
+    #solve integral
+    # this routine allows checking multiple initial guesses
+    count <- 1
+    while(count <= length(list_guesses)){
+
+      guess_i <- list_guesses[[count]]
+
+      # catch possible error
+      test_solution <- try(pracma::fminsearch(fun_obj, guess_i, method="Nelder-Mead",
+                                              maxiter = 10000)$xmin,
+                           silent = T)
+
+      if (class(test_solution) == 'try-error'){
+        count <- count+1
+        # cat('error \n')
+      } else {
+        multipliers <- test_solution
+        # cat(copula_mult_1)
+        break
+      }
+    }
+
+    if (count > length(list_guesses)){
+      cat('No solution possible with suggested guesses. Pleae try again')
+      return(NULL)
+    }
+  } else{
+    # test_solutions == FALSE
+    multipliers <- pracma::fminsearch(fun_obj, guess, method="Nelder-Mead",
+                                      maxiter = 10000)$xmin
+  }
 
   a0 <- pracma::integral2(function(x,y)
     exp(-multipliers[1]*(x) - multipliers[2]*(x^2) - multipliers[3]*(y) -
@@ -197,15 +268,6 @@ get_copula_distribution <- function(copula_mult){
 
     return(C_values)
 }
-
-
-# #' function to obtain Copula and Survival Copula distributions
-# #'
-# #' @param copula_mult vector with the six copula lagrange multipliers (in this orther: *Lambda_0*,
-# #' *Lambda_1*, and *Lambda_2*, *Gamma_1*, *Gamma_2*, and *Lambda_3*). Preferably the output from `get_copula_multipliers()`
-# #'
-# #' @return a 4 column data frame with x and y values for mapping, and the values of Copula and Survival Copula distributions.
-# get_distribution_comparison <- function(){}
 
 
 #' function to obtain the return period of the copula to particular event features (based on the probability of the marginals)
@@ -311,9 +373,9 @@ get_return_periods <- function(data, d, marginal_mult, copula_mult, p_values){
 #'
 get_comparison_tr <- function(data_study, return_periods_reference, d){
 
-  data_study <- series2
-  d = 0.01
-  return_periods_reference <- return_periods_1
+  # data_study <- series2
+  # d = 0.01
+  # return_periods_reference <- return_periods_1
 
   # get marginal distribution of raw data of study area
   marginal_mult = get_marginal_multipliers(data_series = data_study[,4:5])
@@ -346,7 +408,7 @@ get_comparison_tr <- function(data_study, return_periods_reference, d){
   }
 
   #get copula multipliers *study*
-  copula_multipliers <- get_copula_multipliers(data_study)
+  copula_multipliers <- get_copula_multipliers(data_study, test_solutions = T)
 
   # define copula (primitive) *study*
   copula <- function(x,y) exp(copula_multipliers[1] -copula_multipliers[2]*(x) -
@@ -395,8 +457,8 @@ get_distribution_comparison <- function(data_study, data_reference, d){
   marg_mult_2 <- get_marginal_multipliers(data_study[,4:5])
 
   # get copula multipliers and distribution (reference)
-  copula_mult_1 <- get_copula_multipliers(data_reference)
-  copula_mult_2 <- get_copula_multipliers(data_study)
+  copula_mult_1 <- get_copula_multipliers(data_reference, test_solutions = T)
+  copula_mult_2 <- get_copula_multipliers(data_study, test_solutions = T)
 
   copula_dist_1 <- get_copula_distribution(copula_mult_1)
 
@@ -462,6 +524,114 @@ get_distribution_comparison <- function(data_study, data_reference, d){
 
   output <- return_periods_all |>
     setNames(c('u = F(x)', 'v = F(y)', 'x', 'y', 'Tr_ref', 'xt_2', 'yt_2', 'u_2', 'v_2', 'C_2', 'Tr_2'))
+
+  return(output)
+}
+
+
+#' Pipe-line to get relevant MECC data
+#'
+#' @param station_id integer. The ID number of the DWD station
+#' @param year_limits a vector with two integers, the years of beginning and end of the study period
+#' @param year_break an integer, the year in which the series is divided for comparison
+#'
+#' @return The function returns a list with 6 elements, the copula distributions for each
+#' interval, the return period for relevant events in each interval, the comaprison of
+#' return periods and its distribution.
+#'
+#' @export
+#'
+pipe_line_MECC <- function(station_id, year_limits, year_break){
+
+  tic<-proc.time()["elapsed"] #get elapted time
+
+  cat('\nProcessing...\nThere are 13 steps and the processing can take up to a few minutes.' )
+
+  # 1. read data
+  data_station <- get_data_station_MECC(station_id, var_name='kl',
+                                        date_bounds = NA)
+  cat('\n1')
+
+  # 2. calc. PET
+  station_etp <- calculate_ETP_daily_MECC(input_type = 'dwd', list_data = data_station,
+                                          method = 'hargreavessamani')
+  cat('-2')
+
+  # 3. calc SPEI
+  station_spei <- quiet(calculate_SPEI_MECC(Date = station_etp$Date, ETP = station_etp$ETP,
+                                      Precipitation = data_station$data$RSK, scale = 3,
+                                      year_bounds = year_limits, fill_gaps = F))
+  cat('-3')
+
+
+  # 4. get droughts
+  station_droghts <- get_drought_series(Date = station_spei$Date, SPEI = station_spei$SPEI,
+                                        threshold = 0, year_bounds = year_limits)
+  cat('-4')
+
+  # 5. get intervals
+  series1 <- station_droghts$drought_max |>
+    dplyr::filter(year < year_break) |>
+    marginal_interval()
+
+  series2 <- station_droghts$drought_max |>
+    dplyr::filter(year >= year_break) |>
+    marginal_interval()
+
+  cat('-5')
+
+  # 6. get marginal multipliers
+  mult1 <- get_marginal_multipliers(series1[,4:5])
+  mult2 <- get_marginal_multipliers(series2[,4:5])
+  cat('-6')
+
+  # 7. get ent-based marginals
+  series1 <- get_marginal_distribution(series1, mult1)
+  series2 <- get_marginal_distribution(series2, mult2)
+  cat('-7')
+
+  # 8. get_copula_multipliers
+  copula_mult_1 <- get_copula_multipliers(series1, test_solutions = T)
+  copula_mult_2 <- get_copula_multipliers(series2, test_solutions = T)
+  cat('-8')
+
+  # 9. get_copula_distribution
+  copula_dist_1 <- get_copula_distribution(copula_mult_1)
+  copula_dist_2 <- get_copula_distribution(copula_mult_2)
+  cat('-9')
+
+  # 10. get_return_periods
+  return_periods_1 <- get_return_periods(series1, d = 0.01, marginal_mult = mult1,
+                                         copula_mult = copula_mult_1,
+                                         p_values = c(0.8,0.9,0.95,0.98,.99))
+  return_periods_2 <-get_return_periods(series2, d = 0.01, marginal_mult = mult2,
+                                        copula_mult = copula_mult_2,
+                                        p_values = c(0.8,0.9,0.95,0.98,.99))
+  cat('-10')
+
+  # if(exists("series2")) cat('-')
+
+  # 11 .get_comparison_tr
+  copula_comparison <- get_comparison_tr(data_study = series2,
+                                         return_periods_reference = return_periods_1,
+                                         d = 0.01)
+  cat('-11')
+
+  # 12. get_distribution_comparison
+  dist_comparison <- get_distribution_comparison(data_study = series2,
+                                                 data_reference = series1, d = 0.01)
+  cat('-12')
+
+  # 13. output
+  output <- list(copula_dist_1 = copula_dist_1,
+                 copula_dist_2 = copula_dist_2,
+                 return_periods_1 = return_periods_1,
+                 return_periods_2 = return_periods_2,
+                 copula_comparison = copula_comparison,
+                 dist_comparison = dist_comparison)
+  cat('-13\n')
+  toc<-proc.time()["elapsed"]
+  cat('Finished! Elapsed time =',toc-tic,'\n')
 
   return(output)
 }

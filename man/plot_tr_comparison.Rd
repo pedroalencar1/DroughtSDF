@@ -4,7 +4,12 @@
 \alias{plot_tr_comparison}
 \title{function to plot heatmap of changes in return period (Tr) over time for selected evetns}
 \usage{
-plot_tr_comparison(tr_comparison)
+plot_tr_comparison(
+  tr_comparison,
+  station_metadata,
+  year_bounds = c(1900, 2019),
+  year_break = 1960
+)
 }
 \arguments{
 \item{tr_comparison}{data frame with columns containing the absolute value of the drought features (x and y),

@@ -8,7 +8,10 @@ plot_tr_distribution_comparison(
   tr_dist_comparison,
   data_reference,
   data_study,
-  na.rm = F
+  na.rm = T,
+  station_metadata,
+  year_bounds = c(1900, 2019),
+  year_break = 1960
 )
 }
 \arguments{
@@ -24,6 +27,12 @@ transformations and the entropy-based marginals for the STUDY period of interest
 the output of `get_marginal_distribution()`.}
 
 \item{na.rm}{logical. Default is True. NA values are filled with `tidyr::fill(direction = 'down')`}
+
+\item{station_metadata}{data frame with metadata, preferably the output from `get_data_station()`.}
+
+\item{year_bounds}{vector with two integer values, the years of beginning and end of analysis}
+
+\item{year_break}{integer, the year used to separate the data into reference and study datasets.}
 }
 \description{
 function to plot the  changes in the distribution of return period period (Tr) for the domain of events in the reference period.
