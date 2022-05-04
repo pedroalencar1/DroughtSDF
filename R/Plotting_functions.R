@@ -8,7 +8,9 @@
 #' the return period of reference (Tr_ref) and the return period of the study (Tr_new). Preferably the output
 #' of function `get_comparison_tr()`.
 #'
-#'@export
+#' @return The function returns a ggplot element.
+#'
+#' @export
 #'
 plot_tr_comparison <- function(tr_comparison, station_metadata, year_bounds = c(1900,2019),
                                year_break = 1960){
@@ -26,7 +28,8 @@ plot_tr_comparison <- function(tr_comparison, station_metadata, year_bounds = c(
                               '\nReference period: ',year_bounds[1], '-', (year_break-1),
                               '\nStudy period: ',year_break, '-',year_bounds[2],
                               '\nThe ratio was calculated as (Reference-Study)/Study',
-                              sep = ""))
+                              sep = ""))+
+        theme_classic()
 
     return(plot)
 }
@@ -46,6 +49,8 @@ plot_tr_comparison <- function(tr_comparison, station_metadata, year_bounds = c(
 #' @param station_metadata data frame with metadata, preferably the output from `get_data_station()`.
 #' @param year_bounds vector with two integer values, the years of beginning and end of analysis
 #' @param year_break integer, the year used to separate the data into reference and study datasets.
+#'
+#' @return The function returns a ggplot element.
 #'
 #' @export
 #'
@@ -82,3 +87,56 @@ plot_tr_distribution_comparison <- function(tr_dist_comparison, data_reference, 
 
     return(plot)
 }
+
+#' Function to  plot NA (missing values) og the time series
+#'
+#' @param list_data list with three elements - output of function `get_data_station_MECC()`
+#' @param varname character with the name of the variable, corresponding to the default names from DWD
+#'
+#' @return The function returns a ggplot element.
+#'
+#' @export
+#'
+plot_na <- function(list_data, varname = 'RSK'){
+
+    var_names <- colnames(list_data[[1]])
+
+    if (varname %in% var_names){
+        data <- as.data.frame(list_data[[1]])
+        metadata <- list_data[[2]]
+        var_names <- colnames(list_data[[1]])
+        na_count <- list_data[[3]]
+
+        id <- which(varname == var_names)
+
+        min_var <- min(data[,id], na.rm = T)
+        data$na <- max(data[,id], na.rm = T)*is.na(data[,id]) - min_var
+
+        theme_set(theme_classic())
+        theme_update(axis.text.y.left = element_blank(),
+                     axis.ticks.y.left = element_blank())
+        plot_na <- ggplot(data,aes(x = data[,1], y = data[,id]-min_var))+
+            geom_line(colour = '#246faa')+
+            geom_point(colour = '#246faa')+
+            geom_bar(data,
+                     mapping = aes(x = data[,1], y =na,
+                                   fill = as.factor(1*is.na(data[,id]))),
+                     alpha = ifelse(is.na(data[,id]), 0.5,0),
+                     stat = 'identity',
+                     width = 86400,
+                     show.legend = F)+
+            scale_fill_manual(
+                values = c("#ffffff","#d23b46"),
+                name = "Missing data"
+            ) +
+            scale_y_continuous(expand = c(0,0),
+                               sec.axis = sec_axis(~.+min_var, name = var_names[id]))+
+            labs(x = 'Date', y = " ")+
+            ggtitle(paste("Distribution of missing values for ", var_names[id]),
+                    subtitle=paste(metadata$name,", No. of missing days:", as.numeric(na_count[id+1]),
+                                   ' (', format((100*as.numeric(na_count[id+1])/nrow(data)), digits=4),'% of days)', sep = ""))
+
+        return(plot_na)
+    } else {cat("Variable name not valid\n")}
+}
+

@@ -550,6 +550,12 @@ pipe_line_MECC <- function(station_id, year_limits, year_break){
   # 1. read data
   data_station <- get_data_station_MECC(station_id, var_name='kl',
                                         date_bounds = NA)
+
+  # removes many old years that might cause problems with PET calculation due to missing values
+  if (min(lubridate::year(data_station$data$Date)) < year_limits[1]-1){
+    data_station$data %<>% filter(lubridate::year(data_station$data$Date) >=year_limits[1]-1)
+  }
+
   cat('\n1')
 
   # 2. calc. PET
@@ -628,7 +634,10 @@ pipe_line_MECC <- function(station_id, year_limits, year_break){
                  return_periods_1 = return_periods_1,
                  return_periods_2 = return_periods_2,
                  copula_comparison = copula_comparison,
-                 dist_comparison = dist_comparison)
+                 dist_comparison = dist_comparison,
+                 series1 = series1,
+                 series2 = series2,
+                 data_station = data_station)
   cat('-13\n')
   toc<-proc.time()["elapsed"]
   cat('Finished! Elapsed time =',toc-tic,'\n')

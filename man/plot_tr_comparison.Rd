@@ -16,6 +16,9 @@ plot_tr_comparison(
 the return period of reference (Tr_ref) and the return period of the study (Tr_new). Preferably the output
 of function `get_comparison_tr()`.}
 }
+\value{
+The function returns a ggplot element.
+}
 \description{
 function to plot heatmap of changes in return period (Tr) over time for selected evetns
 }

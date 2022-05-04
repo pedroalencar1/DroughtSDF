@@ -54,13 +54,8 @@ get_data_station_MECC <- function(station_id, var_name='kl', date_bounds = NA){
 
         }
         # filter data by dates, if bounds are provided
-        if (!is.na(date_bounds)){
-            data %<>% dplyr::filter(., MESS_DATUM >= date_bounds[1], MESS_DATUM <= date_bounds[2]) %>%
-                suppressWarnings()%>%
-                dplyr::mutate(Date= .$MESS_DATUM) %>% tidyr::complete(Date= seq(from = as.Date(date_bounds[1]),
-                                                                                to = as.Date(date_bounds[2]),
-                                                                                by = "day"))
-        } else {
+        if (is.na(date_bounds)){
+
             date_bounds[1] <- as.Date(min(data$MESS_DATUM, na.rm = T))
             date_bounds[2] <- as.Date(max(data$MESS_DATUM, na.rm = T))
 
@@ -71,12 +66,20 @@ get_data_station_MECC <- function(station_id, var_name='kl', date_bounds = NA){
                 dplyr::mutate(Date= .$MESS_DATUM) %>% complete(Date= seq(from = as.Date(date_bounds[1]),
                                                                          to = as.Date(date_bounds[2]),
                                                                          by = "day"))
+
+        } else {
+
+            data %<>% dplyr::filter(., MESS_DATUM >= date_bounds[1], MESS_DATUM <= date_bounds[2]) %>%
+                suppressWarnings()%>%
+                dplyr::mutate(Date= .$MESS_DATUM) %>% tidyr::complete(Date= seq(from = as.Date(date_bounds[1]),
+                                                                                to = as.Date(date_bounds[2]),
+                                                                                by = "day"))
         }
 
         data <- data[!duplicated(data$Date),] # remove duplicates
 
-        data %<>% setNames(sub("\\..*", "", colnames(.))) %>%#rename columns to more simple name
-            filter(!is.na(STATIONS_ID))
+        data %<>% setNames(sub("\\..*", "", colnames(.))) #%>%#rename columns to more simple name
+            # filter(!is.na(STATIONS_ID))
 
         # View(data)
 
@@ -449,3 +452,6 @@ get_drought_series <- function(Date, SPEI, threshold = 0, year_bounds = c(1900,2
                 drought_max = max_drought))
 
 }
+
+
+

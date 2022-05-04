@@ -34,6 +34,9 @@ the output of `get_marginal_distribution()`.}
 
 \item{year_break}{integer, the year used to separate the data into reference and study datasets.}
 }
+\value{
+The function returns a ggplot element.
+}
 \description{
 function to plot the  changes in the distribution of return period period (Tr) for the domain of events in the reference period.
 }
