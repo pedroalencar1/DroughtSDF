@@ -607,10 +607,10 @@ pipe_line_MECC <- function(station_id, year_limits, year_break){
   cat('-9')
 
   # 10. get_return_periods
-  return_periods_1 <- get_return_periods(series1, d = 0.01, marginal_mult = mult1,
+  return_periods_1 <- get_return_periods(series1, d = 0.1, marginal_mult = mult1,
                                          copula_mult = copula_mult_1,
                                          p_values = c(0.8,0.9,0.95,0.98,.99))
-  return_periods_2 <-get_return_periods(series2, d = 0.01, marginal_mult = mult2,
+  return_periods_2 <-get_return_periods(series2, d = 0.1, marginal_mult = mult2,
                                         copula_mult = copula_mult_2,
                                         p_values = c(0.8,0.9,0.95,0.98,.99))
   cat('-10')
@@ -620,12 +620,12 @@ pipe_line_MECC <- function(station_id, year_limits, year_break){
   # 11 .get_comparison_tr
   copula_comparison <- get_comparison_tr(data_study = series2,
                                          return_periods_reference = return_periods_1,
-                                         d = 0.01)
+                                         d = 0.1)
   cat('-11')
 
   # 12. get_distribution_comparison
   dist_comparison <- get_distribution_comparison(data_study = series2,
-                                                 data_reference = series1, d = 0.01)
+                                                 data_reference = series1, d = 0.1)
   cat('-12')
 
   # 13. output

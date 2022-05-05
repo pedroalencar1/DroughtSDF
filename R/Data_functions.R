@@ -419,11 +419,11 @@ get_drought_series <- function(Date, SPEI, threshold = 0, year_bounds = c(1900,2
 
         if(is.na(series$drought[i])){
             beg_affected <- max(which(series$drought[1:i] != 1)) + 1 # first zero value in the streak
-            end_affected <- min(which(series$drought[(i+1):nrow(series)] != 1))+ i- 1 # last zero value in the streak
+            end_affected <- suppressWarnings(min(min(which(series$drought[(i+1):nrow(series)] != 1))+ i- 1,
+                                                 nrow(series))) # last zero value in the streak
             series$drought[beg_affected:end_affected] <- NA
         }
     }
-
 
     series %<>% mutate(year = lubridate::year(date), spei_aux = ifelse(is.na(drought), NA,spei*drought),
                        drought_aux_NA = ifelse(is.na(drought), 0, drought),
