@@ -315,7 +315,6 @@ kato_comparison_2 <- function(C_values1, C_values2, u = 0.2){
     output <- data.frame('metric' = c('k_hist', 'k_curr', 'k_diff'), 'value' = c(k_hist, k_curr, k_diff))
 
     return(output)
-
 }
 
 #' Function to assess copula asymmetry

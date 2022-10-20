@@ -1,7 +1,7 @@
 Package: DroughtSDF
 Type: Package
 Title: Package to analyse Drought features and its changes using Copula and Entropy Theory
-Version: 0.1.0
+Version: 0.2.0
 Author: Pedro Alencar
 Maintainer: Pedro Alencar <pedro.alencar@campus.tu-berlin.de>
 Description: This package uses the principle of maximum entropy (Shannon, 1948) to obtain the Most Entropic Canonical Copula (Zhang and Singh, 2019). The main aim of the package is to compare changes in drought features (bivariate) over time. However, the available functions can be implemented to other processes and variables.
