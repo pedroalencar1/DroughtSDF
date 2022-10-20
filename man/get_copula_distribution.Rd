@@ -4,11 +4,16 @@
 \alias{get_copula_distribution}
 \title{function to obtain Copula and Survival Copula distributions}
 \usage{
-get_copula_distribution(copula_mult)
+get_copula_distribution(copula_mult, type = "complete", values = NULL)
 }
 \arguments{
 \item{copula_mult}{vector with the six copula lagrange multipliers (in this orther: *Lambda_0*,
 *Lambda_1*, and *Lambda_2*, *Gamma_1*, *Gamma_2*, and *Lambda_3*). Preferably the output from `get_copula_multipliers()`}
+
+\item{type}{string indicating if the probabilities should be calculated to the complete range of the marginals
+or to some specific values. Available options: `complete` and `limited`. Default value is `complete`}
+
+\item{values}{vector required if `type == "limited"`. Default value is `NULL`}
 }
 \value{
 a 4 column data frame with x and y values for mapping, and the values of Copula and Survival Copula distributions.

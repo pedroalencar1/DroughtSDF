@@ -14,9 +14,6 @@ years in columns.}
 \item{n_param}{Number of parameters of the Log-logist distribution (either 2
 or 3).}
 }
-\value{
-
-}
 \description{
 Auxiliar function to calculate SPEI. Calibrates parameters of multiple log-logist functions
 using Probability Weighted Moments (PWM) according to Singh (1998) "Entropu-based parameter

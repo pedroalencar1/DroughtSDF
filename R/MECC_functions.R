@@ -283,7 +283,7 @@ get_copula_distribution <- function(copula_mult, type = 'complete', values = NUL
 }
 
 
-#' function to compare the changes in the  Copula
+#' Function to assess and compare copula asymmetry changes
 #'
 #' @param C_values1,C_values2 matrix with 4 columns `xi, yi, dist, surv` which indicate the values of the marginals (`xi, yi`)
 #' and the cumulative probability of the copula distribution and survival copula for the historical (`1`) and analysed (`2`)
@@ -292,13 +292,13 @@ get_copula_distribution <- function(copula_mult, type = 'complete', values = NUL
 #' note that u has to exist in the columns xi, yi of `C_value`.
 #'
 #' @return a 2 column data frame with metric names (`k_hist, k_curr, k_diff`) and values. `k_hist` is the metric from Kato et al., calculated
-#' for the historical period and `k_curr` for the analyised/current period. `k_diff` if the relative difference ($\frac{k_diff - k_hist}{k_hist}$)
+#' for the historical period and `k_curr` for the analysed/current period. `k_diff` if the relative difference ($\frac{k_diff - k_hist}{k_hist}$)
 #'
 #' @details Based on the paper of Kato et al.(2022 - 10.1007/s00362-022-01297-w)
 #'
 #' @export
 #'
-compare_copula_distribution <- function(C_values1, C_values2, u = 0.2){
+kato_comparison_2 <- function(C_values1, C_values2, u = 0.2){
 
     p = c(u, 1-u)
 
@@ -318,12 +318,12 @@ compare_copula_distribution <- function(C_values1, C_values2, u = 0.2){
 
 }
 
-#' function to compare the changes in the  Copula
+#' Function to assess copula asymmetry
 #'
 #' @param C_values matrix with 4 columns `xi, yi, dist, surv` which indicate the values of the marginals (`xi, yi`)
 #' and the cumulative probability of the copula distribution and survival copula analysed. Preferably this matrix should be
 #' the output of function `get_copula_distribution()`
-#' @param u a number in the interval (0,0.5], indicating the interest area of assymetry measurement. Default value is `0.2`.
+#' @param u a number in the interval (0,0.5], indicating the interest area of asymmetry measurement. Default value is `0.2`.
 #' note that u has to exist in the columns xi, yi of `C_value`.
 #'
 #' @return a single value `k_value`
@@ -332,7 +332,7 @@ compare_copula_distribution <- function(C_values1, C_values2, u = 0.2){
 #'
 #' @export
 #'
-get_copula_assymetry <- function(C_values1, u = 0.2){
+kato_comparison_1 <- function(C_values1, u = 0.2){
 
     p = c(u, 1-u)
 
