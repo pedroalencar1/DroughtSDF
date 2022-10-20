@@ -23,7 +23,7 @@ Imports:
     ggforce,
     Evapotranspiration,
     zoo,
-    pracma
+    pracma,
 Suggests:
     knitr,
     devtools,

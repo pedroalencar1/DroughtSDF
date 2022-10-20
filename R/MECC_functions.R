@@ -233,20 +233,33 @@ get_copula_multipliers <- function(data, guess = c(1,10,1,10,-100), test_solutio
 #'
 #' @param copula_mult vector with the six copula lagrange multipliers (in this orther: *Lambda_0*,
 #' *Lambda_1*, and *Lambda_2*, *Gamma_1*, *Gamma_2*, and *Lambda_3*). Preferably the output from `get_copula_multipliers()`
+#' @param type string indicating if the probabilities should be calculated to the complete range of the marginals
+#' or to some specific values. Available options: `complete` and `limited`. Default value is `complete`
+#' @param values vector required if `type == "limited"`. Default value is `NULL`
 #'
 #' @return a 4 column data frame with x and y values for mapping, and the values of Copula and Survival Copula distributions.
 #'
 #' @export
 #'
-get_copula_distribution <- function(copula_mult){
+get_copula_distribution <- function(copula_mult, type = 'complete', values = NULL){
 
- copula <- function(x,y) exp(copula_mult[1] -copula_mult[2]*(x) - copula_mult[3]*(x^2) - copula_mult[4]*(y) -
+  type <- tolower(type)
+
+  copula <- function(x,y) exp(copula_mult[1] -copula_mult[2]*(x) - copula_mult[3]*(x^2) - copula_mult[4]*(y) -
                                 copula_mult[5]*(y^2) - copula_mult[6]*x*y)
 
   Copula <- function(xm,ym) pracma::integral2(fun = copula, xmin = 0,xmax = xm, ymin = 0, ymax = ym)$Q
 
-  # MATLAB handels well xia nd yi values equal to 1 and 0, but R doesn't. This new interval fixes it.
-  xi <- (seq(1,99, length.out = 99)/100)^0.5
+  # MATLAB handels well xi and yi values equal to 1 and 0, but R doesn't. This new interval fixes it.
+  if (type =='complete'){
+      xi <- (seq(1,99, length.out = 99)/100)^0.5
+  } else if (type =='limited') {
+      xi <- values
+  } else {
+      cat('Invalid TYPE option')
+      return(NULL)
+  }
+
 
   C_values <- crossing(xi,xi) |>
     setNames(c('yi', 'xi'))|>
@@ -255,7 +268,7 @@ get_copula_distribution <- function(copula_mult){
 
 
   for (i in 1:nrow(C_values)){
-    tryCatch({ # do to the numerical compuation of the integral, some values are not solvable. They are replaced by NA!
+    tryCatch({ # do to the numerical computation of the integral, some values are not solvable. They are replaced by NA!
       C_values$dist[i] <- Copula(C_values$xi[i], C_values$yi[i])
       C_values$surv[i] <- -1 + C_values$xi[i] + C_values$yi[i] + Copula(1-C_values$xi[i], 1-C_values$yi[i])
 
@@ -267,6 +280,70 @@ get_copula_distribution <- function(copula_mult){
   }
 
     return(C_values)
+}
+
+
+#' function to compare the changes in the  Copula
+#'
+#' @param C_values1,C_values2 matrix with 4 columns `xi, yi, dist, surv` which indicate the values of the marginals (`xi, yi`)
+#' and the cumulative probability of the copula distribution and survival copula for the historical (`1`) and analysed (`2`)
+#' periods. Preferably those matrix should be the output of function `get_copula_distribution()`
+#' @param u a number in the interval (0,0.5], indicating the interest area of assymetry measurement. Default value is `0.2`.
+#' note that u has to exist in the columns xi, yi of `C_value`.
+#'
+#' @return a 2 column data frame with metric names (`k_hist, k_curr, k_diff`) and values. `k_hist` is the metric from Kato et al., calculated
+#' for the historical period and `k_curr` for the analyised/current period. `k_diff` if the relative difference ($\frac{k_diff - k_hist}{k_hist}$)
+#'
+#' @details Based on the paper of Kato et al.(2022 - 10.1007/s00362-022-01297-w)
+#'
+#' @export
+#'
+compare_copula_distribution <- function(C_values1, C_values2, u = 0.2){
+
+    p = c(u, 1-u)
+
+    c1d <- C_values1$dist[C_values1$xi == p[1] & C_values1$yi == p[1]]
+    c1s <- C_values1$surv[C_values1$xi == p[2] & C_values1$yi == p[2]]
+
+    c2d <- C_values2$dist[C_values2$xi == p[1] & C_values2$yi == p[1]]
+    c2s <- C_values2$surv[C_values2$xi == p[2] & C_values2$yi == p[2]]
+
+    k_hist <- log(c1s/c1d)
+    k_curr <- log(c2s/c2d)
+    k_diff <- (k_curr - k_hist)/k_hist
+
+    output <- data.frame('metric' = c('k_hist', 'k_curr', 'k_diff'), 'value' = c(k_hist, k_curr, k_diff))
+
+    return(output)
+
+}
+
+#' function to compare the changes in the  Copula
+#'
+#' @param C_values matrix with 4 columns `xi, yi, dist, surv` which indicate the values of the marginals (`xi, yi`)
+#' and the cumulative probability of the copula distribution and survival copula analysed. Preferably this matrix should be
+#' the output of function `get_copula_distribution()`
+#' @param u a number in the interval (0,0.5], indicating the interest area of assymetry measurement. Default value is `0.2`.
+#' note that u has to exist in the columns xi, yi of `C_value`.
+#'
+#' @return a single value `k_value`
+#'
+#' @details Based on the paper of Kato et al.(2022 - 10.1007/s00362-022-01297-w)
+#'
+#' @export
+#'
+get_copula_assymetry <- function(C_values1, u = 0.2){
+
+    p = c(u, 1-u)
+
+    c1d <- C_values1$dist[C_values1$xi == p[1] & C_values1$yi == p[1]]
+    c1s <- C_values1$surv[C_values1$xi == p[2] & C_values1$yi == p[2]]
+
+
+    k_value <- log(c1s/c1d)
+
+    return(k_value)
+
 }
 
 
