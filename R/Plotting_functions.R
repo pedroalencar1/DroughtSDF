@@ -12,7 +12,9 @@
 #'
 #' @export
 #'
-plot_tr_comparison <- function(tr_comparison, station_metadata, year_bounds = c(1900,2019),
+plot_tr_comparison <- function(tr_comparison,
+                               station_metadata,
+                               year_bounds = c(1900,2019),
                                year_break = 1960){
 
     plot <- tr_comparison |> mutate(diff = Tr_ref - Tr_new,
@@ -45,40 +47,61 @@ plot_tr_comparison <- function(tr_comparison, station_metadata, year_bounds = c(
 #' @param data_study data frame with seven columns containing years, severity and duration, its
 #' transformations and the entropy-based marginals for the STUDY period of interest. Preferably
 #' the output of `get_marginal_distribution()`.
-#' @param na.rm logical. Default is True. NA values are filled with `tidyr::fill(direction = 'down')`
 #' @param station_metadata data frame with metadata, preferably the output from `get_data_station()`.
 #' @param year_bounds vector with two integer values, the years of beginning and end of analysis
 #' @param year_break integer, the year used to separate the data into reference and study datasets.
+#' @param na.rm logical. Default is True. NA values are filled with `tidyr::fill(direction = 'down')`
 #'
 #' @return The function returns a ggplot element.
 #'
+#' @details The numeric solution may introduce negative return periods in extreme
+#' cases (high duration - low severity; and vise-versa). These negative values
+#' introduce noise to the plot and can be removed before plotting
+#'
 #' @export
 #'
-plot_tr_distribution_comparison <- function(tr_dist_comparison, data_reference, data_study,
-                                            na.rm = T, station_metadata, year_bounds = c(1900,2019),
-                                            year_break = 1960){
+plot_tr_distribution_comparison <- function(tr_dist_comparison,
+                                            data_reference,
+                                            data_study,
+                                            station_metadata,
+                                            year_bounds = c(1900,2019),
+                                            year_break = 1960,
+                                            na.rm = T){
 
     if(na.rm){
         tr_dist_comparison %<>% fill(Tr_ref, Tr_2)
     }
 
+    xmax <- max(tr_dist_comparison$x, na.rm = T)
+    ymax <- max(tr_dist_comparison$y, na.rm = T)
+
     theme_set(theme_bw())
     theme_update(aspect.ratio=1)
     plot <- ggplot2::ggplot(tr_dist_comparison, aes(x = x, y = y))+
-        geom_contour_filled(aes(z = Tr_ref), breaks = c(1,2,5,10,20,50,100,200),polygon_outline = FALSE)+
-        geom_contour(aes(z = Tr_2), breaks = c(2,5,10,20,50,100), colour = 'darkgrey')+
+        geom_contour_filled(aes(z = Tr_ref), breaks = c(1,2,5,10,20,50,100),polygon_outline = FALSE)+
+        geom_contour(aes(z = Tr_2), breaks = c(2,5,10,20,50), colour = 'darkgrey')+
         geom_text_contour(aes(z = Tr_2), skip = 0,
                           breaks = c(2,5,10,20,50),
                           label.placer = label_placer_n(1),
-                          colour = 'darkred')+
-        # ggtitle('MECC cumulative probability function')+
-        scale_x_continuous(expand = c(0.0,0.1), limits = c(0,max(series1$sev)))+
-        scale_y_continuous(expand = c(0.0,0.1), limits = c(0,max(series1$dur)))+
-        labs(x = 'Severity (SPEI3)', y = 'Duration (months)',
+                          colour = 'darkred',
+                          stroke = =0.15)+
+        geom_text_contour(aes(z = Tr_ref), skip = 0,
+                          breaks = c(2,5,10,20,50),
+                          label.placer = label_placer_n(1),
+                          colour = 'darkblue',
+                          stroke = 0.15)+
+        scale_x_continuous(expand = c(0.0,0.1), limits = c(0,xmax))+
+        scale_y_continuous(expand = c(0.0,0.1), limits = c(0,ymax))+
+        labs(x = 'Severity (SPEI3)',
+             y = 'Duration (months)',
              title = 'Comparison of Return Period Distributions',
-             subtitle = paste('Station ',station_metadata$name, ' - id:',station_metadata$id,
-                              '\nReference period (colored curves): ', year_bounds[1], '-', (year_break-1),
-                              '\nStudy period (grey curves): ',year_break, '-',year_bounds[2],
+             subtitle = paste('Station ',
+                              stringr::str_to_title(trimws(station_metadata$name)),
+                              ' - id:',station_metadata$id,
+                              '\nReference period (colored curves): ',
+                              year_bounds[1], '-', (year_break-1),
+                              '\nStudy period (grey curves): ',
+                              year_break, '-',year_bounds[2],
                               sep = ""))+
         theme_bw()+
         theme_update(aspect.ratio=1)+

@@ -159,6 +159,8 @@ get_copula_multipliers <- function(data, guess = c(1,10,1,10,-100), test_solutio
                        c(5,5,5,5,-5),
                        c(10,10,10,10,-10),
                        c(20,20,20,20,-20),
+                       c(1,80,1,80,-160),
+                       c(10,50,10,50,-115),
                        c(1,65,1,65,-130),
                        c(2,55,2,55,-110),
                        c(3,45,3,45,-90),
@@ -294,7 +296,10 @@ get_copula_distribution <- function(copula_mult, type = 'complete', values = NUL
 #' @return a 2 column data frame with metric names (`k_hist, k_curr, k_diff`) and values. `k_hist` is the metric from Kato et al., calculated
 #' for the historical period and `k_curr` for the analysed/current period. `k_diff` if the relative difference ($\frac{k_diff - k_hist}{k_hist}$)
 #'
-#' @details Based on the paper of Kato et al.(2022 - 10.1007/s00362-022-01297-w)
+#' @details Based on the paper of Kato et al.(2022 - 10.1007/s00362-022-01297-w).
+#' The larger the value of kato's index, the higher the asymmetry. Negative values of
+#' `k_diff` indicate that there was a reduction in asymmetry, which can indicate an
+#' increase on the frequency of more extreme droughts.
 #'
 #' @export
 #'
